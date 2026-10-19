@@ -26,10 +26,10 @@ jobs:
           pip install pandas numpy finance-datareader tqdm
 
       - name: 한국 주식 계산
-        run: python rs_rating_kr.py
+        run: python RS_Rating_KR.py
 
       - name: 미국 주식 계산
-        run: python rs_rating_us.py
+        run: python RS_Rating_US.py
 
       - name: 결과 파일 커밋
         run: |
