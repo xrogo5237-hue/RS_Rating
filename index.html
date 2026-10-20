@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RS Rating</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; margin: 40px; background: #f5f5f7; }
+    h1 { color: #1d1d1f; }
+    h2 { color: #333; margin-top: 40px; }
+    table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #eee; }
+    th { background: #fafafa; font-weight: 600; }
+    tr:hover { background: #f9f9f9; }
+    .rating { font-weight: bold; color: #0071e3; }
+  </style>
+</head>
+<body>
+  <h1>RS Rating (80점 이상)</h1>
+  <p>매일 자동 업데이트됩니다.</p>
+
+  <h2>한국 주식</h2>
+  <table id="kr-table">
+    <thead>
+      <tr><th>종목코드</th><th>종목명</th><th>RS Raw</th><th>RS Rating</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <h2>미국 주식</h2>
+  <table id="us-table">
+    <thead>
+      <tr><th>Symbol</th><th>Name</th><th>RS Raw</th><th>RS Rating</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    async function loadData(file, tableId) {
+      try {
+        const res = await fetch(file);
+        const data = await res.json();
+        const tbody = document.querySelector(`#${tableId} tbody`);
+        tbody.innerHTML = data.map(item => `
+          <tr>
+            <td>${item.Symbol}</td>
+            <td>${item.Name}</td>
+            <td>${item.RS_Raw.toFixed(2)}</td>
+            <td class="rating">${item.RS_Rating}</td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    loadData('kr_result.json', 'kr-table');
+    loadData('us_result.json', 'us-table');
+  </script>
+</body>
+</html>
