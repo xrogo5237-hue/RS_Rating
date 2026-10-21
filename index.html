@@ -8,6 +8,7 @@
     body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; margin: 40px; background: #f5f5f7; }
     h1 { color: #1d1d1f; }
     h2 { color: #333; margin-top: 40px; }
+    .update-time { color: #666; font-size: 0.9em; margin-bottom: 10px; }
     table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
     th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #eee; }
     th { background: #fafafa; font-weight: 600; }
@@ -20,6 +21,7 @@
   <p>매일 자동 업데이트됩니다.</p>
 
   <h2>한국 주식</h2>
+  <div class="update-time" id="kr-time">업데이트 시간: 확인 중...</div>
   <table id="kr-table">
     <thead>
       <tr><th>종목코드</th><th>종목명</th><th>RS Raw</th><th>RS Rating</th></tr>
@@ -28,6 +30,7 @@
   </table>
 
   <h2>미국 주식</h2>
+  <div class="update-time" id="us-time">업데이트 시간: 확인 중...</div>
   <table id="us-table">
     <thead>
       <tr><th>Symbol</th><th>Name</th><th>RS Raw</th><th>RS Rating</th></tr>
@@ -36,10 +39,15 @@
   </table>
 
   <script>
-    async function loadData(file, tableId) {
+    async function loadData(file, tableId, timeId) {
       try {
         const res = await fetch(file);
         const data = await res.json();
+        
+        if (data.length > 0 && data[0].UpdateTime) {
+          document.getElementById(timeId).textContent = `업데이트 시간: ${data[0].UpdateTime}`;
+        }
+        
         const tbody = document.querySelector(`#${tableId} tbody`);
         tbody.innerHTML = data.map(item => `
           <tr>
@@ -51,11 +59,12 @@
         `).join('');
       } catch (e) {
         console.error(e);
+        document.getElementById(timeId).textContent = '데이터를 불러올 수 없습니다.';
       }
     }
 
-    loadData('kr_result.json', 'kr-table');
-    loadData('us_result.json', 'us-table');
+    loadData('kr_result.json', 'kr-table', 'kr-time');
+    loadData('us_result.json', 'us-table', 'us-time');
   </script>
 </body>
 </html>
