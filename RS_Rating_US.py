@@ -22,9 +22,9 @@ amex = fdr.StockListing('AMEX')
 
 us_list = pd.concat([nasdaq, nyse, amex], ignore_index=True)
 
-# ETF / 펀드 / 우선주 등 제외
+# ETF / 펀드 등 제외
 exclude_keywords = ['ETF', 'Fund', 'Trust', 'Index', 'Income', 'Bond', 'Preferred', 'Warrant', 'Unit']
-mask = \~us_list['Name'].str.contains('|'.join(exclude_keywords), case=False, na=False)
+mask = ~us_list['Name'].str.contains('|'.join(exclude_keywords), case=False, na=False)
 us_list = us_list[mask][['Symbol', 'Name']].reset_index(drop=True)
 
 print(f"필터 후 미국 종목 수: {len(us_list)}개")
@@ -95,6 +95,10 @@ else:
     
     df_result = df_result.sort_values('RS_Raw', ascending=False)
     df_result = df_result[df_result['RS_Rating'] >= 80]
+    
+    # 업데이트 시간 추가
+    update_time = datetime.now().strftime('%Y-%m-%d %H:%M')
+    df_result['UpdateTime'] = update_time
     
     df_result.to_json(OUTPUT_FILE, orient='records', force_ascii=False)
     
