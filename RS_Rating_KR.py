@@ -79,18 +79,17 @@ if len(results) == 0:
 else:
     df_result = pd.DataFrame(results)
     
-    # RS Rating 계산 (1~99)
     df_result['RS_Rating'] = df_result['RS_Raw'].rank(pct=True) * 98 + 1
     df_result['RS_Rating'] = df_result['RS_Rating'].round().astype(int)
     df_result['RS_Rating'] = df_result['RS_Rating'].clip(1, 99)
     
-    # RS_Raw 큰 순서대로 정렬
     df_result = df_result.sort_values('RS_Raw', ascending=False)
-    
-    # 80점 이상만 필터
     df_result = df_result[df_result['RS_Rating'] >= 80]
     
-    # JSON으로 저장
+    # 업데이트 시간 추가
+    update_time = datetime.now().strftime('%Y-%m-%d %H:%M')
+    df_result['UpdateTime'] = update_time
+    
     df_result.to_json(OUTPUT_FILE, orient='records', force_ascii=False)
     
     print(f"\n완료! 80점 이상 {len(df_result)}개 종목 저장됨")
