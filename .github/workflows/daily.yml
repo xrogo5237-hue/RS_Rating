@@ -28,6 +28,7 @@ jobs:
 
       - name: 한국 주식 계산
         run: python RS_Rating_KR.py
+        continue-on-error: true
 
       - name: 미국 주식 계산
         run: python RS_Rating_US.py
