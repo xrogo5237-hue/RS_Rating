@@ -1,7 +1,7 @@
 import FinanceDataReader as fdr
 import pandas as pd
 import numpy as np
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from tqdm import tqdm
 import time
 import warnings
@@ -18,13 +18,16 @@ print("미국 종목 리스트를 가져오는 중...")
 
 nasdaq = fdr.StockListing('NASDAQ')
 nyse = fdr.StockListing('NYSE')
-amex = fdr.StockListing('AMEX')
 
-us_list = pd.concat([nasdaq, nyse, amex], ignore_index=True)
+us_list = pd.concat([nasdaq, nyse], ignore_index=True)
 
-# ETF / 펀드 등 제외
-exclude_keywords = ['ETF', 'Fund', 'Trust', 'Index', 'Income', 'Bond', 'Preferred', 'Warrant', 'Unit']
-mask = ~us_list['Name'].str.contains('|'.join(exclude_keywords), case=False, na=False)
+# 주식 외 상품 최대한 제외
+exclude_keywords = [
+    'ETF', 'Fund', 'Trust', 'Index', 'Income', 'Bond', 'Preferred',
+    'Warrant', 'Unit', 'Notes', 'Debenture', 'Senior', 'Subordinated',
+    'Due 20', 'Due 19', 'Due 18', '%', 'Coupon', 'ADR', 'Depositary'
+]
+mask = \~us_list['Name'].str.contains('|'.join(exclude_keywords), case=False, na=False)
 us_list = us_list[mask][['Symbol', 'Name']].reset_index(drop=True)
 
 print(f"필터 후 미국 종목 수: {len(us_list)}개")
@@ -96,8 +99,9 @@ else:
     df_result = df_result.sort_values('RS_Raw', ascending=False)
     df_result = df_result[df_result['RS_Rating'] >= 80]
     
-    # 업데이트 시간 추가
-    update_time = datetime.now().strftime('%Y-%m-%d %H:%M')
+    # 한국 시간으로 업데이트 시간
+    KST = timezone(timedelta(hours=9))
+    update_time = datetime.now(KST).strftime('%Y-%m-%d %H:%M')
     df_result['UpdateTime'] = update_time
     
     df_result.to_json(OUTPUT_FILE, orient='records', force_ascii=False)
