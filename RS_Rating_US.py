@@ -1,4 +1,4 @@
-import FinanceDataReader as fdr
+import yfinance as yf
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta, timezone
@@ -16,12 +16,15 @@ MIN_PRICE = 5.0
 # ==================== 미국 종목 리스트 ====================
 print("미국 종목 리스트를 가져오는 중...")
 
+# yfinance는 종목 리스트를 직접 제공하지 않아서 
+# 간단한 방식으로 NASDAQ/NYSE 주요 종목을 가져옵니다.
+# (더 정확한 리스트가 필요하면 나중에 개선 가능)
+import FinanceDataReader as fdr   # 리스트만 임시로 사용
+
 nasdaq = fdr.StockListing('NASDAQ')
 nyse = fdr.StockListing('NYSE')
-
 us_list = pd.concat([nasdaq, nyse], ignore_index=True)
 
-# 주식 외 상품 최대한 제외
 exclude_keywords = [
     'ETF', 'Fund', 'Trust', 'Index', 'Income', 'Bond', 'Preferred',
     'Warrant', 'Unit', 'Notes', 'Debenture', 'Senior', 'Subordinated',
@@ -38,7 +41,7 @@ def calculate_rs_raw(symbol):
         end_date = datetime.today()
         start_date = end_date - timedelta(days=LOOKBACK_DAYS)
         
-        df = fdr.DataReader(symbol, start_date, end_date)
+        df = yf.download(symbol, start=start_date, end=end_date, progress=False)
         
         if df is None or len(df) < MIN_DAYS:
             return None
@@ -62,7 +65,7 @@ def calculate_rs_raw(symbol):
             return None
         
         rs_raw = 0.4 * p3 + 0.2 * p6 + 0.2 * p9 + 0.2 * p12
-        return rs_raw
+        return float(rs_raw)
     
     except Exception:
         return None
@@ -84,7 +87,7 @@ for idx, row in tqdm(us_list.iterrows(), total=len(us_list)):
             'RS_Raw': rs_raw
         })
     
-    time.sleep(0.05)
+    time.sleep(0.1)
 
 # ==================== 결과 정리 ====================
 if len(results) == 0:
@@ -99,7 +102,6 @@ else:
     df_result = df_result.sort_values('RS_Raw', ascending=False)
     df_result = df_result[df_result['RS_Rating'] >= 80]
     
-    # 한국 시간으로 업데이트 시간
     KST = timezone(timedelta(hours=9))
     update_time = datetime.now(KST).strftime('%Y-%m-%d %H:%M')
     df_result['UpdateTime'] = update_time
