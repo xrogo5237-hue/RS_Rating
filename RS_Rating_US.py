@@ -25,8 +25,11 @@ exclude_keywords = [
     'Warrant', 'Unit', 'Notes', 'Debenture', 'Senior', 'Subordinated',
     'Due 20', 'Due 19', 'Due 18', '%', 'Coupon', 'ADR', 'Depositary'
 ]
-mask = \~us_list['Name'].str.contains('|'.join(exclude_keywords), case=False, na=False)
-us_list = us_list[mask][['Symbol', 'Name']].reset_index(drop=True)
+
+# \~ 기호를 사용하지 않는 방식으로 필터링
+pattern = '|'.join(exclude_keywords)
+us_list = us_list[\~us_list['Name'].str.contains(pattern, case=False, na=False)]
+us_list = us_list[['Symbol', 'Name']].reset_index(drop=True)
 
 print(f"필터 후 미국 종목 수: {len(us_list)}개")
 
