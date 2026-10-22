@@ -1,7 +1,7 @@
+import FinanceDataReader as fdr
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta, timezone
-from pykrx import stock
 from tqdm import tqdm
 import time
 import warnings
@@ -13,17 +13,11 @@ OUTPUT_FILE = "kr_result.json"
 
 print("한국 종목 리스트를 가져오는 중...")
 
-today = datetime.today().strftime('%Y%m%d')
-kospi = stock.get_market_ticker_list(today, market="KOSPI")
-kosdaq = stock.get_market_ticker_list(today, market="KOSDAQ")
+kospi = fdr.StockListing('KOSPI')[['Code', 'Name']]
+kosdaq = fdr.StockListing('KOSDAQ')[['Code', 'Name']]
+kr_list = pd.concat([kospi, kosdaq], ignore_index=True)
+kr_list = kr_list.rename(columns={'Code': 'Symbol'})
 
-kr_codes = kospi + kosdaq
-kr_list = []
-for code in kr_codes:
-    name = stock.get_market_ticker_name(code)
-    kr_list.append({'Symbol': code, 'Name': name})
-
-kr_list = pd.DataFrame(kr_list)
 print(f"총 한국 종목 수: {len(kr_list)}개")
 
 def calculate_rs_raw(symbol):
@@ -31,16 +25,12 @@ def calculate_rs_raw(symbol):
         end_date = datetime.today()
         start_date = end_date - timedelta(days=LOOKBACK_DAYS)
         
-        df = stock.get_market_ohlcv_by_date(
-            start_date.strftime('%Y%m%d'),
-            end_date.strftime('%Y%m%d'),
-            symbol
-        )
+        df = fdr.DataReader(symbol, start_date, end_date)
         
         if df is None or len(df) < MIN_DAYS:
             return None
         
-        close = df['종가']
+        close = df['Close']
         
         def roc(days):
             if len(close) > days:
@@ -77,7 +67,7 @@ for idx, row in tqdm(kr_list.iterrows(), total=len(kr_list)):
             'RS_Raw': rs_raw
         })
     
-    time.sleep(0.05)
+    time.sleep(0.03)
 
 if len(results) == 0:
     print("계산된 종목이 없습니다.")
