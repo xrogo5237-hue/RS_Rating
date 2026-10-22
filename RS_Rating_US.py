@@ -1,4 +1,4 @@
-import yfinance as yf
+import FinanceDataReader as fdr
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta, timezone
@@ -14,8 +14,6 @@ MIN_PRICE = 5.0
 
 print("미국 종목 리스트를 가져오는 중...")
 
-import FinanceDataReader as fdr
-
 nasdaq = fdr.StockListing('NASDAQ')
 nyse = fdr.StockListing('NYSE')
 us_list = pd.concat([nasdaq, nyse], ignore_index=True)
@@ -27,8 +25,8 @@ exclude_keywords = [
 ]
 
 pattern = '|'.join(exclude_keywords)
-filtered = us_list['Name'].str.contains(pattern, case=False, na=False)
-us_list = us_list[filtered == False]
+is_excluded = us_list['Name'].str.contains(pattern, case=False, na=False)
+us_list = us_list[is_excluded == False]
 us_list = us_list[['Symbol', 'Name']].reset_index(drop=True)
 
 print(f"필터 후 미국 종목 수: {len(us_list)}개")
@@ -38,7 +36,7 @@ def calculate_rs_raw(symbol):
         end_date = datetime.today()
         start_date = end_date - timedelta(days=LOOKBACK_DAYS)
         
-        df = yf.download(symbol, start=start_date, end=end_date, progress=False)
+        df = fdr.DataReader(symbol, start_date, end_date)
         
         if df is None or len(df) < MIN_DAYS:
             return None
@@ -62,7 +60,7 @@ def calculate_rs_raw(symbol):
             return None
         
         rs_raw = 0.4 * p3 + 0.2 * p6 + 0.2 * p9 + 0.2 * p12
-        return float(rs_raw)
+        return rs_raw
     
     except Exception:
         return None
@@ -83,7 +81,7 @@ for idx, row in tqdm(us_list.iterrows(), total=len(us_list)):
             'RS_Raw': rs_raw
         })
     
-    time.sleep(0.1)
+    time.sleep(0.05)
 
 if len(results) == 0:
     print("계산된 종목이 없습니다.")
