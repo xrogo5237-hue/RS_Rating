@@ -24,7 +24,7 @@ jobs:
 
       - name: 라이브러리 설치
         run: |
-          pip install pandas numpy pykrx yfinance finance-datareader tqdm
+          pip install pandas numpy finance-datareader tqdm
 
       - name: 한국 주식 계산
         run: python RS_Rating_KR.py
