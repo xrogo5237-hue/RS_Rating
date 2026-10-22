@@ -71,4 +71,36 @@ for idx, row in tqdm(us_list.iterrows(), total=len(us_list)):
     symbol = row['Symbol']
     name = row['Name']
     
-    rs_raw =
+    rs_raw = calculate_rs_raw(symbol)
+    
+    if rs_raw is not None:
+        results.append({
+            'Symbol': symbol,
+            'Name': name,
+            'RS_Raw': rs_raw
+        })
+    
+    time.sleep(0.1)
+
+if len(results) == 0:
+    print("계산된 종목이 없습니다.")
+else:
+    df_result = pd.DataFrame(results)
+    
+    df_result['RS_Rating'] = df_result['RS_Raw'].rank(pct=True) * 98 + 1
+    df_result['RS_Rating'] = df_result['RS_Rating'].round().astype(int)
+    df_result['RS_Rating'] = df_result['RS_Rating'].clip(1, 99)
+    
+    df_result = df_result.sort_values('RS_Raw', ascending=False)
+    df_result = df_result[df_result['RS_Rating'] >= 80]
+    
+    KST = timezone(timedelta(hours=9))
+    update_time = datetime.now(KST).strftime('%Y-%m-%d %H:%M')
+    df_result['UpdateTime'] = update_time
+    
+    df_result.to_json(OUTPUT_FILE, orient='records', force_ascii=False)
+    
+    print(f"\n완료! 80점 이상 {len(df_result)}개 종목 저장됨")
+    print(f"결과 파일: {OUTPUT_FILE}")
+    print("\n상위 10개:")
+    print(df_result.head(10).to_string(index=False))
