@@ -1,7 +1,7 @@
-import FinanceDataReader as fdr
 import pandas as pd
 import numpy as np
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+from pykrx import stock
 from tqdm import tqdm
 import time
 import warnings
@@ -15,11 +15,17 @@ OUTPUT_FILE = "kr_result.json"
 # ==================== 한국 종목 리스트 ====================
 print("한국 종목 리스트를 가져오는 중...")
 
-kospi = fdr.StockListing('KOSPI')[['Code', 'Name']]
-kosdaq = fdr.StockListing('KOSDAQ')[['Code', 'Name']]
-kr_list = pd.concat([kospi, kosdaq], ignore_index=True)
-kr_list = kr_list.rename(columns={'Code': 'Symbol'})
+today = datetime.today().strftime('%Y%m%d')
+kospi = stock.get_market_ticker_list(today, market="KOSPI")
+kosdaq = stock.get_market_ticker_list(today, market="KOSDAQ")
 
+kr_codes = kospi + kosdaq
+kr_list = []
+for code in kr_codes:
+    name = stock.get_market_ticker_name(code)
+    kr_list.append({'Symbol': code, 'Name': name})
+
+kr_list = pd.DataFrame(kr_list)
 print(f"총 한국 종목 수: {len(kr_list)}개")
 
 # ==================== RS Raw 계산 함수 ====================
@@ -28,12 +34,16 @@ def calculate_rs_raw(symbol):
         end_date = datetime.today()
         start_date = end_date - timedelta(days=LOOKBACK_DAYS)
         
-        df = fdr.DataReader(symbol, start_date, end_date)
+        df = stock.get_market_ohlcv_by_date(
+            start_date.strftime('%Y%m%d'),
+            end_date.strftime('%Y%m%d'),
+            symbol
+        )
         
         if df is None or len(df) < MIN_DAYS:
             return None
         
-        close = df['Close']
+        close = df['종가']
         
         def roc(days):
             if len(close) > days:
@@ -71,7 +81,7 @@ for idx, row in tqdm(kr_list.iterrows(), total=len(kr_list)):
             'RS_Raw': rs_raw
         })
     
-    time.sleep(0.03)
+    time.sleep(0.05)
 
 # ==================== 결과 정리 ====================
 if len(results) == 0:
@@ -86,8 +96,8 @@ else:
     df_result = df_result.sort_values('RS_Raw', ascending=False)
     df_result = df_result[df_result['RS_Rating'] >= 80]
     
-    # 업데이트 시간 추가
-    update_time = datetime.now().strftime('%Y-%m-%d %H:%M')
+    KST = timezone(timedelta(hours=9))
+    update_time = datetime.now(KST).strftime('%Y-%m-%d %H:%M')
     df_result['UpdateTime'] = update_time
     
     df_result.to_json(OUTPUT_FILE, orient='records', force_ascii=False)
@@ -95,4 +105,4 @@ else:
     print(f"\n완료! 80점 이상 {len(df_result)}개 종목 저장됨")
     print(f"결과 파일: {OUTPUT_FILE}")
     print("\n상위 10개:")
-    print(df_result.head(10).to_string(index=False))
+    print(df_result.head(10).to_string(
