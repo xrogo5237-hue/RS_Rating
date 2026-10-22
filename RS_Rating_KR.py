@@ -7,12 +7,10 @@ import time
 import warnings
 warnings.filterwarnings('ignore')
 
-# ==================== 설정 ====================
 LOOKBACK_DAYS = 400
 MIN_DAYS = 252
 OUTPUT_FILE = "kr_result.json"
 
-# ==================== 한국 종목 리스트 ====================
 print("한국 종목 리스트를 가져오는 중...")
 
 today = datetime.today().strftime('%Y%m%d')
@@ -28,7 +26,6 @@ for code in kr_codes:
 kr_list = pd.DataFrame(kr_list)
 print(f"총 한국 종목 수: {len(kr_list)}개")
 
-# ==================== RS Raw 계산 함수 ====================
 def calculate_rs_raw(symbol):
     try:
         end_date = datetime.today()
@@ -64,7 +61,6 @@ def calculate_rs_raw(symbol):
     except Exception:
         return None
 
-# ==================== 계산 시작 ====================
 print("\nRS 점수를 계산하는 중...")
 results = []
 
@@ -83,7 +79,6 @@ for idx, row in tqdm(kr_list.iterrows(), total=len(kr_list)):
     
     time.sleep(0.05)
 
-# ==================== 결과 정리 ====================
 if len(results) == 0:
     print("계산된 종목이 없습니다.")
 else:
@@ -105,4 +100,4 @@ else:
     print(f"\n완료! 80점 이상 {len(df_result)}개 종목 저장됨")
     print(f"결과 파일: {OUTPUT_FILE}")
     print("\n상위 10개:")
-    print(df_result.head(10).to_string(
+    print(df_result.head(10).to_string(index=False))
