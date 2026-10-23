@@ -2,8 +2,10 @@ name: Daily RS Rating
 
 on:
   schedule:
-    - cron: '0 7 * * 1-5'
-    - cron: '0 21 * * 1-5'
+    # 한국시간 16:30 (평일)
+    - cron: '30 7 * * 1-5'
+    # 한국시간 다음날 07:30 (평일) - 미국 데이터용
+    - cron: '30 22 * * 1-5'
   workflow_dispatch:
 
 permissions:
